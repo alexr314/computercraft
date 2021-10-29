@@ -1,9 +1,12 @@
+initalized = false
 
 local function save_position(position)
 
     state_file = fs.open('position', 'w')
     state_file.write(textutils.serialize(position))
     state_file.close()
+
+    initalized = true
 end
 
 
@@ -12,6 +15,8 @@ local function get_position()
     state_file = fs.open('position', 'r')
     position = textutils.unserialize(state_file.readAll())
     state_file.close()
+
+    initalized = true
     return position
 end
 
@@ -143,6 +148,46 @@ end
 
 -- Moving
 
+-- Before we ever break a block, we must make sure it's not a blacklisted block.
+blacklist = {'computercraft:turtle', 'minecraft:redstone_dust', 'minecraft:stone_bricks'}
+
+function inspect()
+    is_block, val = turtle.inspect()
+    if is_block then
+        return val.name
+    else
+        return ''
+    end
+end
+
+
+function inspectUp()
+    is_block, val = turtle.inspectUp()
+    if is_block then
+        return val.name
+    else
+        return ''
+    end
+end
+
+
+function inspectDown()
+    is_block, val = turtle.inspectDown()
+    if is_block then
+        return val.name
+    else
+        return ''
+    end
+end
+
+
+function is_blacklisted(block_name)
+    for _ , name in pairs(blacklist) do
+        return true
+    end
+    return false
+
+
 function forward(n)
 
     if n == nil then n = 1 end        -- n defaults to 1
@@ -171,6 +216,11 @@ function forward(n)
         end
         save_position(position)
 
+        --[[if is_blacklisted(inspect()) then
+            right()
+            forward()
+        end]] -- come back to this later, requires rewriting go_to function.
+        
         if not turtle.forward() then   -- Finally we try to actually move forward!
             position = old_position    -- If it still doesn't work we revert. We must protect the position at all costs!
             save_position(position)
