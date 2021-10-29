@@ -1,15 +1,14 @@
--- Mover by Alex --
 
--- Abstracts movement for computercraft turtles
+local function save_position(position)
 
-function save_position(position)
     state_file = fs.open('position', 'w')
     state_file.write(textutils.serialize(position))
     state_file.close()
 end
 
 
-function get_position()
+local function get_position()
+
     state_file = fs.open('position', 'r')
     position = textutils.unserialize(state_file.readAll())
     state_file.close()
@@ -17,19 +16,15 @@ function get_position()
 end
 
 
-local function copy_table(tbl)
-    local new_table = {}
-    for i, v in pairs(tbl) do
-        new_table[i] = v
-    end
-    return new_table
+ -- Initalizes positon state
+position = {0,0,0,'N'}
+
+if fs.exists('position') then
+    position = get_position()
 end
 
- -- Initalizes positon state
 
-position = {}
-
-if not fs.exists('position') then
+function init()
 
     while true do
         print('')
@@ -59,38 +54,43 @@ if not fs.exists('position') then
     end
 
     save_position(position)
-else
-    position = get_position()
 end
 
 
-function reposition()
-    while true do
-        print('')
-        print('Repositioning.')
-        print('')
-        print('Please enter my position:')
-        write('x: ')
-        x = read()
-        write('y: ')
-        y = read()
-        write('z: ')
-        z = read()
-        write("heading (N, S, E, W): ")
-        heading = read()
+function set_world_position(x, y, z, h)
+    -- This should only be used to intialize or reset the turtle. Pass (x, y, z, heading (string))
+    position = {x, y, z, h}
+    save_position(position)
+end
 
-        if tonumber(x) and tonumber(y) and tonumber(z) and (heading=='N' or heading=='S' or heading=='E' or heading=='W') then
-            position[1] = tonumber(x)
-            position[2] = tonumber(y)
-            position[3] = tonumber(z)
-            position[4] = heading
-            print('Done.')
-            print('')
-            break
-        else
-            print('Invalid entries, please try again!')
-        end
+
+function get_world_position()
+    return position[1], position[2], position[3], position[4]
+end
+
+
+local_origin = {0,0,0}
+function set_local_origin()
+    local_origin[1] = position[1]
+    local_origin[2] = position[2]
+    local_origin[3] = position[3]
+    position[5] = local_origin
+    save_position(position)
+end
+
+
+function get_relative_position()
+    return position[1] - local_origin[1], position[2] - local_origin[2], position[3] - local_origin[3]
+end
+
+
+local function copy_table(tbl)
+
+    local new_table = {}
+    for i, v in pairs(tbl) do
+        new_table[i] = v
     end
+    return new_table
 end
 
 -- Define commands to replace basic movement commands and automatically track the state
@@ -109,6 +109,7 @@ end
 -- Turning
 
 function get_new_direction(current_heading, n_right)
+
     headings = {'N', 'E', 'S', 'W'}
     heading_indicies = {['N']=0, ['E']=1, ['S']=2, ['W']=3}
 
@@ -119,6 +120,7 @@ function get_new_direction(current_heading, n_right)
 end
 
 function left(n)
+
     if n == nil then n = 1 end
 
     for _ = 1, n do
@@ -129,6 +131,7 @@ function left(n)
 end
 
 function right(n)
+
     if n == nil then n = 1 end
 
     for _ = 1, n do
@@ -141,6 +144,7 @@ end
 -- Moving
 
 function forward(n)
+
     if n == nil then n = 1 end        -- n defaults to 1
 
     if turtle.getFuelLevel() < n then
@@ -176,6 +180,7 @@ function forward(n)
 end
 
 function backward(n)
+
     if n == nil then n = 1 end
     
     if turtle.getFuelLevel() < n then
@@ -189,6 +194,7 @@ function backward(n)
 end
 
 function up(n)
+
     if n == nil then n = 1 end
     
     if turtle.getFuelLevel() < n then
@@ -213,6 +219,7 @@ function up(n)
 end
 
 function down(n)
+
     if n == nil then n = 1 end
     
     if turtle.getFuelLevel() < n then
@@ -238,6 +245,7 @@ end
 
 
 function face(target_heading)
+
     headings = {'N', 'E', 'S', 'W'}
     heading_indicies = {['N']=0, ['E']=1, ['S']=2, ['W']=3}
 
@@ -253,12 +261,7 @@ function face(target_heading)
     end
 end
 
-undo_position = position
 function go_to(x, y, z)
-
-    for i = 1, 4 do
-        undo_position[i] = position[i]
-    end
 
     dx = x - position[1]
     dy = y - position[2]
@@ -294,6 +297,7 @@ function go_to(x, y, z)
     end
 end
 
-function undo()
-    go_to(undo_position[1], undo_position[2], undo_position[3])
+
+function go_to_relative_position(x,y,z)
+    go_to(local_origin[1] + x, local_origin[2] + y, local_origin[3] + z)
 end
