@@ -1,4 +1,4 @@
-initalized = false
+initialized = false
 
 local function save_position(position)
 
@@ -6,7 +6,7 @@ local function save_position(position)
     state_file.write(textutils.serialize(position))
     state_file.close()
 
-    initalized = true
+    initialized = true
 end
 
 
@@ -16,7 +16,7 @@ local function get_position()
     position = textutils.unserialize(state_file.readAll())
     state_file.close()
 
-    initalized = true
+    initialized = true
     return position
 end
 
@@ -186,6 +186,7 @@ function is_blacklisted(block_name)
         return true
     end
     return false
+end
 
 
 function forward(n)
